@@ -43,7 +43,7 @@ const templateChoices = [
 ];
 
 const initMonorepoAction = async (cwd: string) => {
-  const { templateType, projectName } = await prompts([
+  const { templateType, projectName, workspaceAlias } = await prompts([
     {
       type: 'select',
       name: 'templateType',
@@ -60,12 +60,18 @@ const initMonorepoAction = async (cwd: string) => {
       validate: (value: string) =>
         value.length > 128 ? `Name should be less than 128 characters.` : true,
     },
+    {
+      type: 'text',
+      name: 'workspaceAlias',
+      message: 'Enter the workspace alias:',
+      initial: '@workspace',
+    },
   ]);
   console.log(`Selected template: ${templateType}`);
   console.log(`Project name: ${projectName}`);
 
-  if (!templateType || !projectName) {
-    console.log('Template type and project name are required. Exiting.');
+  if (!templateType || !projectName || !workspaceAlias) {
+    console.log('Template type, project name and workspace alias are required. Exiting.');
     process.exit(1);
   }
 
@@ -87,6 +93,8 @@ const initMonorepoAction = async (cwd: string) => {
     const packageJson = await fs.readJson(packageJsonPath);
     packageJson.name = projectName;
     await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
+
+    await replaceInFiles(projectPath, '@workspace', workspaceAlias);
 
     console.log(`Monorepo Project '${projectName}' created successfully.`);
   } catch (error) {
